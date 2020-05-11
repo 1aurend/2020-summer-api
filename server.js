@@ -32,7 +32,7 @@ app.get('/api', (req, res) => {
   res.send('server is up')
 })
 
-// app.use('/people', people)
+app.use('/people', people)
 // app.use('/tools', tools)
 // app.use('/submit', submit)
 // app.use('/', express.static(path.join(__dirname, '/client/build')))
