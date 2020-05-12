@@ -1,40 +1,24 @@
 import express from 'express'
 import Airtable from 'airtable'
+import { formatPersonInfo } from '../utils/schemas'
+import { createRecord } from '../utils/promisifiedCreate'
 require('dotenv').config()
-
 
 const router = express.Router()
 const key = process.env.AT_KEY
-var base = new Airtable({apiKey: key}).base('appiLUFhewofNGI3D');
+var devBase = new Airtable({apiKey: key}).base('appiLUFhewofNGI3D');
+var dupBase = new Airtable({apiKey: key}).base('appuSugdO02qPnW3D');
 
-async function asyncForEach(array, callback) {
-  for (let i = 0; i < array.length; i++) {
-    await callback(array[i], i, array)
-  }
-}
-
-const PERSON = {
-  firstName: '',
-  lastName: '',
-  email: '',
-  role: '',
-}
-
-const ROLES = [
-  'LL Staff',
-  'LLUF',
-  'LLGF',
-  'DiTF',
-  'LLMF',
-]
 
 router.get('/list', async (req, res) => {
   let peopleList = []
-  await base('LL_PEOPLE').select({
+  await devBase('LL_PEOPLE').select({
       maxRecords: 300,
       view: "Grid view"
   }).eachPage((records, fetchNextPage) => {
-      const result = records.map(record => {
+      const result = records.filter(record => {
+        return /2019|2020/.test(record.get('Active'))}) //only works on flattened table where 'Active' type is string
+      .map(record => {
         return record.get('LLPeopleName')
       })
       peopleList = peopleList.concat(result).flat()
@@ -43,6 +27,20 @@ router.get('/list', async (req, res) => {
 
   console.log(peopleList)
   return res.send({people: peopleList})
+})
+
+
+router.post('/create', async (req, res) => {
+  const newPerson = formatPersonInfo(req.body.data)
+  const createInBaseOne = createRecord(devBase, 'EMPTYLLPEOPLE', newPerson)
+  const createInBaseTwo = createRecord(dupBase, 'EMPTYLLPEOPLE', newPerson)
+  const updates = await Promise.all([
+    // QUESTION: what is the best workflow for handling these errors? should the error handler send a slack, etc?
+    createInBaseOne().catch(err => {return err}),
+    createInBaseTwo().catch(err => {return err})
+  ]).then(vals => {return {1: vals[0], 2: vals[1]}})
+  console.log(updates)
+  res.send({result: updates})
 })
 
 
