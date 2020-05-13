@@ -6,8 +6,8 @@ require('dotenv').config()
 
 const router = express.Router()
 const key = process.env.AT_KEY
-var devBase = new Airtable({apiKey: key}).base('appiLUFhewofNGI3D');
-var dupBase = new Airtable({apiKey: key}).base('appuSugdO02qPnW3D');
+const devBase = new Airtable({apiKey: key}).base('appiLUFhewofNGI3D');
+const dupBase = new Airtable({apiKey: key}).base('appuSugdO02qPnW3D');
 
 
 router.get('/list', async (req, res) => {
@@ -42,6 +42,17 @@ router.post('/create', async (req, res) => {
   console.log(updates)
   res.send({result: updates})
 })
+
+router.post('/createwithid', async (req, res) => {
+  const newPerson = formatPersonInfo(req.body.data)
+  const createInBaseOne = createRecord(devBase, 'EMPTYLLPEOPLE', newPerson)
+  const masterRecord = await createInBaseOne().catch(err => {throw new Error(err)})
+  const newPersonWithID = formatPersonInfo(req.body.data, masterRecord.id)
+  const createInBaseTwo = createRecord(dupBase, 'EMPTYLLPEOPLE', newPersonWithID)
+  const secondaryRecord = await createInBaseTwo().catch(err => {throw new Error(err)})
+  res.send({result: {1: masterRecord, 2: secondaryRecord}})
+})
+
 
 
 export default router
