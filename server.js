@@ -13,7 +13,11 @@ const app = express()
 
 require('dotenv').config()
 
-const whiteList = ['http://localhost:3000', 'https://localhost:3000']
+const whiteList = [
+  'http://localhost:3000',
+  'http://localhost:3000/*',
+  'https://localhost:3000', 
+  'https://localhost:3000/*']
 const corsOpts = {
   origin: (origin, callback) => {
     if (whiteList.includes(origin) || !origin) {

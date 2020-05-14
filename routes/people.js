@@ -31,7 +31,7 @@ router.get('/list', async (req, res) => {
 
 
 router.post('/create', async (req, res) => {
-  const newPerson = formatPersonInfo(req.body.data)
+  const newPerson = formatPersonInfo(req.body)
   const createInBaseOne = createRecord(devBase, 'EMPTYLLPEOPLE', newPerson)
   const createInBaseTwo = createRecord(dupBase, 'EMPTYLLPEOPLE', newPerson)
   const updates = await Promise.all([
