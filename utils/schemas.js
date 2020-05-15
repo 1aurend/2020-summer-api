@@ -1,3 +1,5 @@
+import fetchRecordIds from './fetchRecordIds'
+
 export function formatPersonInfo(data, atID) {
   if (atID) {
     return {
@@ -15,5 +17,15 @@ export function formatPersonInfo(data, atID) {
     "!LastName": data.lastName,
     "!Email": data.email,
     "!Role": data.role
+  }
+}
+
+export async function formatResourceData(data, base) {
+  return {
+    Creator: await fetchRecordIds(data.who, base, 'LL_PEOPLE', 'LLPeopleName'),
+    "Tool or Medium": await fetchRecordIds(data.tool, base, 'TOOLS_AND_MEDIA', 'TOOL or MEDIA'),
+    Link: data.link,
+    Type: data.type,
+    Title: data.title
   }
 }

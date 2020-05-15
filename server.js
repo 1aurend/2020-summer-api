@@ -5,8 +5,8 @@ import path from 'path'
 import cors from 'cors'
 
 import people from './routes/people'
-import tools from './routes/tools'
-import submit from './routes/submit'
+import toolsmeds from './routes/toolsmeds'
+import resources from './routes/resources'
 
 
 const app = express()
@@ -16,7 +16,7 @@ require('dotenv').config()
 const whiteList = [
   'http://localhost:3000',
   'http://localhost:3000/*',
-  'https://localhost:3000', 
+  'https://localhost:3000',
   'https://localhost:3000/*']
 const corsOpts = {
   origin: (origin, callback) => {
@@ -37,6 +37,7 @@ app.get('/api', (req, res) => {
 })
 
 app.use('/people', people)
+app.use('/resources', resources)
 // app.use('/tools', tools)
 // app.use('/submit', submit)
 // app.use('/', express.static(path.join(__dirname, '/client/build')))
