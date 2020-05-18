@@ -1,6 +1,6 @@
 import express from 'express'
 import Airtable from 'airtable'
-import { formatTagData } from '../utils/schemas'
+import { formatToolMed } from '../utils/schemas'
 import { createRecord } from '../utils/promisifiedCreate'
 require('dotenv').config()
 
@@ -19,5 +19,20 @@ router.get('/list', async (req, res) => {
   console.log(records)
   res.status(200).send('OK')
 })
+
+router.post('/create', async (req, res) => {
+  console.log(req.body);
+  const newToolMed = formatToolMed(req.body)
+  const createInBaseOne = createRecord(devBase, 'TOOLS_AND_MEDIA', newToolMed)
+  const createInBaseTwo = createRecord(dupBase, 'TOOLS_AND_MEDIA', newToolMed)
+  const updates = await Promise.all([
+    // QUESTION: what is the best workflow for handling these errors? should the error handler send a slack, etc?
+    createInBaseOne().catch(err => {return err}),
+    createInBaseTwo().catch(err => {return err})
+  ]).then(vals => {return {1: vals[0], 2: vals[1]}})
+  console.log(updates)
+  res.send({result: updates})
+})
+
 
 export default router
