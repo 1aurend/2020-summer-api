@@ -29,3 +29,12 @@ export async function formatResourceData(data, base) {
     Title: data.title
   }
 }
+export async function formatResourceDataWithIds(data, base) {
+  return {
+    Creator: data.who,
+    "Tool or Medium": data.tool,
+    Link: data.link,
+    Type: data.type,
+    Title: data.title
+  }
+}

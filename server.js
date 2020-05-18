@@ -7,6 +7,8 @@ import cors from 'cors'
 import people from './routes/people'
 import toolsmeds from './routes/toolsmeds'
 import resources from './routes/resources'
+import list from './routes/list'
+import tags from './routes/tags'
 
 
 const app = express()
@@ -36,9 +38,11 @@ app.get('/api', (req, res) => {
   res.send('server is up')
 })
 
+app.use('/list', list)
 app.use('/people', people)
+app.use('/tags', tags)
 app.use('/resources', resources)
-// app.use('/tools', tools)
+app.use('/toolsmeds', toolsmeds)
 // app.use('/submit', submit)
 // app.use('/', express.static(path.join(__dirname, '/client/build')))
 // app.use('/react(/*)?', express.static(path.join(__dirname, '/client/build')))
