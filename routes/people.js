@@ -32,14 +32,18 @@ router.get('/list', async (req, res) => {
 
 router.post('/create', async (req, res) => {
   const newPerson = formatPersonInfo(req.body)
-  const createInBaseOne = createRecord(devBase, 'EMPTYLLPEOPLE', newPerson)
-  const createInBaseTwo = createRecord(dupBase, 'EMPTYLLPEOPLE', newPerson)
+  const createInBaseOne = createRecord(devBase, 'LL_PEOPLE', newPerson)
+  const createInBaseTwo = createRecord(dupBase, 'LL_PEOPLE', newPerson)
   const updates = await Promise.all([
     // QUESTION: what is the best workflow for handling these errors? should the error handler send a slack, etc?
     createInBaseOne().catch(err => {return err}),
     createInBaseTwo().catch(err => {return err})
-  ]).then(vals => {return {1: vals[0], 2: vals[1]}})
+  ]).then(vals => {return vals[0]})
   console.log(updates)
+  if (updates.error) {
+    console.log('here');
+    res.status(400).send('Add to airtable failed. Get in touch with us.')
+  }
   res.send({result: updates})
 })
 
