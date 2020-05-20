@@ -1,11 +1,11 @@
 import express from 'express'
 import Airtable from 'airtable'
 import { formatResourceData, formatResourceDataWithIds } from '../utils/schemas'
+import fetchRecordIds from '../utils/fetchRecordIds'
 import { createRecord } from '../utils/promisifiedCreate'
 import { findRecord } from '../utils/promisifiedFind'
 import { updateRecord } from '../utils/promisifiedUpdate'
 require('dotenv').config()
-import fetchRecordIds from '../utils/fetchRecordIds'
 
 const router = express.Router()
 const key = process.env.AT_KEY
@@ -21,18 +21,44 @@ router.post('/submit', async (req, res) => {
   res.send({record: record})
 })
 
-router.route('/update')
-  .get(async (req, res) => {
+router.post('/find', async (req, res) => {
+    console.log(req.body);
     const findResource = findRecord(devBase, 'Resources', req.body.id)
     const resourceToUpdate = await findResource().catch(err => {throw new Error(err)})
-    res.send({record: resourceToUpdate})
+    const creatorName = async () => {
+      const findPerson = findRecord(devBase, 'LL_PEOPLE', resourceToUpdate.fields.Creator[0])
+      return (await findPerson().catch(err => {throw new Error(err)})).fields.LLPeopleName
+    }
+    const toolNames = await Promise.all(
+      resourceToUpdate.fields["Tool or Medium"].map(async id => {
+        const findTool = findRecord(devBase, 'TOOLS_AND_MEDIA', id)
+        return {
+          id: id,
+          name: (await findTool().catch(err => {throw new Error(err)})).fields['TOOL or MEDIA']
+        }
+      })
+    )
+    const removeUIDs = {
+      ...resourceToUpdate.fields,
+      //note that I made 'who are you?' a single select field for dev purposes; all the logic is done for this to be multi.
+      Creator: {
+        id: resourceToUpdate.fields.Creator[0],
+        name: await creatorName()
+      },
+      "Tool or Medium": toolNames
+    }
+    const formattedResource = {...resourceToUpdate, fields: removeUIDs}
+    console.log(JSON.stringify(formattedResource, null, 2));
+    res.send({record: formattedResource})
   })
-  .post(async (req, res) => {
+
+  router.post('/update', async (req, res) => {
     console.log(req.body);
-    const updatedData = await formatResourceData(req.body, devBase)
-    const updateResource = updateRecord(devBase, 'Resources', updatedData. req.body.id)
+    const updatedData = await formatResourceDataWithIds(req.body, devBase)
+    console.log(updatedData);
+    const updateResource = updateRecord(devBase, 'Resources', updatedData, req.body.id)
     const update = await updateResource().catch(err => {throw new Error(err)})
-    res.status(200).send(`Resource ${update.fields.Title} successfully updated`)
+    res.status(200).send({record: update})
   })
 
 
