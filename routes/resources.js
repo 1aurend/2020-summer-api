@@ -55,7 +55,6 @@ router.post('/find', async (req, res) => {
   router.post('/update', async (req, res) => {
     console.log(req.body);
     const updatedData = await formatResourceDataWithIds(req.body, devBase)
-    console.log(updatedData);
     const updateResource = updateRecord(devBase, 'Resources', updatedData, req.body.id)
     const update = await updateResource().catch(err => {throw new Error(err)})
     res.status(200).send({record: update})
