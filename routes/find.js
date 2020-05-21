@@ -14,7 +14,7 @@ const router = express.Router()
 const key = process.env.AT_KEY
 
 
-router.post('/:base/:table/:id',
+router.get('/:base/:table/:id',
   async (req, res) => {
     const base = await new Airtable({apiKey: key}).base(BASELOOKUP[req.params.base])
     const table = req.params.table
@@ -31,21 +31,9 @@ router.post('/:base/:table/:id',
   }
 )
 
-async function replaceUID(base, table, id) {
-  console.log('in replaceUID');
-  console.log(id);
-  const finder = findRecord(base, table, id)
-  const record = await finder().catch(err => {
-    console.log(new Error(err))
-    // res.status(404).send(`sorry! we couldn't find ${req.params.id}`)
-    return 'err'
-  })
-  //another thing to argue for-- a tag of "humanReadableTitle"
-  return {id: id, name: record.fields[Object.keys(record.fields)[0]]}
-}
 
-router.post('/human/:base/:table/:id',
-  async (req, res, next) => {
+router.get('/human/:base/:table/:id',
+  async (req, res) => {
     const base = await new Airtable({apiKey: key}).base(BASELOOKUP[req.params.base])
     const table = req.params.table
     const finder = findRecord(base, table, req.params.id)
@@ -54,64 +42,60 @@ router.post('/human/:base/:table/:id',
       res.status(404).send(`sorry! we couldn't find ${req.params.id}`)
       return 'err'
     })
+    console.log('record from airtable:')
     console.log(JSON.stringify(record, null, 2))
     const fields = record.fields
-    const matches = Object.entries(fields)
+    const matches = Promise.all( Object.entries(fields)
       .map(async ([field, value]) => {
+        //Note: this depends on a field naming convention in which the linked table name is referenced in the field name!
         const table = field.split('@')[1]
         const type = _.isString(value) ? 'string' : Array.isArray(value) ? 'array' : null
-        // console.log(field +' : '+ type);
         switch (type) {
           case 'string':
             if (/(rec)([A-Za-z0-9]{14})/.test(value)) {
-              const readable = await replaceUID(base, table, value).catch(err => {return err})
-              return readable
+              const finder = findRecord(base, table, id)
+              return await finder()
+                .catch(err => {
+                  console.log(new Error(err))
+                  res.status(404).send(`sorry! we couldn't find ${req.params.id}`)
+                  return 'err'})
+                .then(record => {
+                  //luckily our first field seems to correspond to the name we'd want here, but this should also be guaranteed with a naming convention
+                  return {[field]: {id: id, name: record.fields[Object.keys(record.fields)[0]]}}
+                })
             }
-            return value
+            return Promise.resolve({[field]: value})
             break
           case 'array':
             if (/(rec)([A-Za-z0-9]{14})/.test(value[0])) {
-              const test = value.map( async id => {
-                const finder = findRecord(base, table, id)
-                const record = await finder().catch(err => {
-                  console.log(new Error(err))
-                  // res.status(404).send(`sorry! we couldn't find ${req.params.id}`)
-                  return 'err'
-                })
-                // const readable = await replaceUID(base, table, id).catch(err => {return err})
-                console.log('in switch');
-                // console.log(record);
-                return record.fields[Object.keys(record.fields)[0]]
-              })
-              return test
+              const readableVals = await (value.map(
+                async id => {
+                  const finder = findRecord(base, table, id)
+                  return await finder()
+                    .catch(err => {
+                      console.log(new Error(err))
+                      res.status(404).send(`sorry! we couldn't find ${req.params.id}`)
+                      return 'err'})
+                    .then(record => {
+                      return {id: id, name: record.fields[Object.keys(record.fields)[0]]}
+                    })
+                  })
+                )
+              const ready = await Promise.all(readableVals).then(vals => {return vals})
+              return {[field]: ready}
             }
-            return value
+            return Promise.resolve({[field]: value})
             break
           default:
-            return value
+            return Promise.resolve({[field]: value})
         }
+      })).then(vals => {
+        const readablefields = Object.assign(...vals.flat())
+        const readableRecord = {...record, fields: readablefields}
+        console.log('readable record:')
+        console.log(JSON.stringify(readableRecord, null, 2))
+        res.status(200).send({result: readableRecord})
       })
-      // .flat(2)
-    // console.log(matches.flat());
-    const newTest = await Promise.all(matches.flat()).then(async vals => {
-      await Promise.all(vals)} ).then(data => console.log(data))
-    console.log('newTest');
-    console.log(newTest);
-    res.status(200).send({result: newTest})
-  }
-  )
-    // const removeUIDs = {
-    //   ...resourceToUpdate.fields,
-    //   //note that I made 'who are you?' a single select field for dev purposes; all the logic is done for this to be multi.
-    //   Creator: {
-    //     id: resourceToUpdate.fields.Creator[0],
-    //     name: await creatorName()
-    //   },
-    //   "Tool or Medium": toolNames
-    // }
-    // const formattedResource = {...resourceToUpdate, fields: removeUIDs}
-    // console.log(JSON.stringify(formattedResource, null, 2));
-    // res.send({record: formattedResource})
-
+  })
 
   export default router
