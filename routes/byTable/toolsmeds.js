@@ -1,7 +1,7 @@
 import express from 'express'
 import Airtable from 'airtable'
-import { formatToolMed } from '../utils/schemas'
-import { createRecord } from '../utils/promisifiedCreate'
+import { formatToolMed } from '../../utils/schemas'
+import { createRecord } from '../../utils/promisifiedCreate'
 require('dotenv').config()
 
 const router = express.Router()

@@ -1,10 +1,10 @@
 import express from 'express'
 import Airtable from 'airtable'
-import { formatResourceData, formatResourceDataWithIds } from '../utils/schemas'
-import fetchRecordIds from '../utils/fetchRecordIds'
-import { createRecord } from '../utils/promisifiedCreate'
-import { findRecord } from '../utils/promisifiedFind'
-import { updateRecord } from '../utils/promisifiedUpdate'
+import { formatResourceData, formatResourceDataWithIds } from '../../utils/schemas'
+import fetchRecordIds from '../../utils/fetchRecordIds'
+import { createRecord } from '../../utils/promisifiedCreate'
+import { findRecord } from '../../utils/promisifiedFind'
+import { updateRecord } from '../../utils/promisifiedUpdate'
 require('dotenv').config()
 
 const router = express.Router()

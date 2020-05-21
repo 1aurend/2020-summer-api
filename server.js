@@ -4,11 +4,17 @@ import bodyParser from 'body-parser'
 import path from 'path'
 import cors from 'cors'
 
-import people from './routes/people'
-import toolsmeds from './routes/toolsmeds'
-import resources from './routes/resources'
+//universal routes that will hopefully supercede the table-specific ones below
 import list from './routes/list'
-import tags from './routes/tags'
+import find from './routes/find'
+import create from './routes/create'
+import update from './routes/update'
+
+//table-specific routes for (copies of) resourceBase
+import people from './routes/byTable/people'
+import toolsmeds from './routes/byTable/toolsmeds'
+import resources from './routes/byTable/resources'
+import tags from './routes/byTable/tags'
 
 
 const app = express()
@@ -19,7 +25,9 @@ const whiteList = [
   'http://localhost:3000',
   'http://localhost:3000/*',
   'https://localhost:3000',
-  'https://localhost:3000/*']
+  'https://localhost:3000/*',
+  'https://block--i-l-u-fhewof-n-g-i3-d--9058w0r.airtableblocks.com'
+]
 const corsOpts = {
   origin: (origin, callback) => {
     if (whiteList.includes(origin) || !origin) {
@@ -39,11 +47,12 @@ app.get('/api', (req, res) => {
 })
 
 app.use('/list', list)
+app.use('/find', find)
+
 app.use('/people', people)
 app.use('/tags', tags)
 app.use('/resources', resources)
 app.use('/toolsmeds', toolsmeds)
-// app.use('/submit', submit)
 // app.use('/', express.static(path.join(__dirname, '/client/build')))
 // app.use('/react(/*)?', express.static(path.join(__dirname, '/client/build')))
 
