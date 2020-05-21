@@ -45,7 +45,7 @@ router.get('/human/:base/:table/:id',
     console.log('record from airtable:')
     console.log(JSON.stringify(record, null, 2))
     const fields = record.fields
-    const matches = Promise.all( Object.entries(fields)
+    const matches = Object.entries(fields)
       .map(async ([field, value]) => {
         //Note: this depends on a field naming convention in which the linked table name is referenced in the field name!
         const table = field.split('@')[1]
@@ -64,7 +64,7 @@ router.get('/human/:base/:table/:id',
                   return {[field]: {id: id, name: record.fields[Object.keys(record.fields)[0]]}}
                 })
             }
-            return Promise.resolve({[field]: value})
+            return {[field]: value}
             break
           case 'array':
             if (/(rec)([A-Za-z0-9]{14})/.test(value[0])) {
@@ -84,18 +84,18 @@ router.get('/human/:base/:table/:id',
               const ready = await Promise.all(readableVals).then(vals => {return vals})
               return {[field]: ready}
             }
-            return Promise.resolve({[field]: value})
+            return {[field]: value}
             break
           default:
-            return Promise.resolve({[field]: value})
+            return {[field]: value}
         }
-      })).then(vals => {
-        const readablefields = Object.assign(...vals.flat())
-        const readableRecord = {...record, fields: readablefields}
-        console.log('readable record:')
-        console.log(JSON.stringify(readableRecord, null, 2))
-        res.status(200).send({result: readableRecord})
       })
+    const readableVals = await Promise.all(matches)
+    const readablefields = Object.assign(...readableVals.flat())
+    const readableRecord = {...record, fields: readablefields}
+    console.log('readable record:')
+    console.log(JSON.stringify(readableRecord, null, 2))
+    res.status(200).send({result: readableRecord})
   })
 
   export default router
